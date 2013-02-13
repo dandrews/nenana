@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: iso-8859-1 -*-
 
-import random
 import datetime
+import random
+import sys
 
 FMT = '%m/%d/%Y %I:%M %p'
 
@@ -39,39 +40,65 @@ DIFF = MAX - MIN
 MINUTES = divmod(DIFF.total_seconds(), 60)[0]
 MEAN = MIN + datetime.timedelta(minutes=MINUTES/2)
 
-print
+print "ACTUAL: %s" % ACTUAL.strftime(FMT) 
 print "MIN: %s" % MIN.strftime(FMT)
 print "MEAN: %s" % MEAN.strftime(FMT)
 print "MAX: %s" % MAX.strftime(FMT)
 print
 
-def make_guess():
-    guess_delta = (random.gauss(0,.5) * MINUTES/4)
-    guess = MEAN + datetime.timedelta(minutes=guess_delta)
-    return guess.replace( second=0, microsecond=0)
+def flip(p):
+    return -1 if random.random() < p else 1
+
+def make_guess( method = '' ):
+    if method == 'guass0,.5/4':
+        guess_delta = (random.gauss(0,.5) * MINUTES/4)
+        guess = MEAN + datetime.timedelta(minutes=guess_delta)
+        return guess.replace( second=0, microsecond=0)
+    else:
+        # normal guass
+        guess_delta = (random.gauss(0,1) * MINUTES/4)
+        guess = MEAN + datetime.timedelta(minutes=guess_delta)
+        return guess.replace( second=0, microsecond=0)
 
 MAX_GUESSES = 1000
-random_datetimes = []
-while len(random_datetimes) < MAX_GUESSES:
-    guess = make_guess()
-    # want 1000 unique guesses
-    if guess not in random_datetimes:
-        random_datetimes.append( guess )
 
-guess_diffs = []    
-for guess in random_datetimes:
-    guess_diff = guess - ACTUAL
-    guess_minutes = divmod(guess_diff.total_seconds(), 60)[0]
-    guess_diffs.append( abs(guess_minutes) )
+TEST_COUNT = 100
 
-average = sum( guess_diffs ) / len(guess_diffs)
+results = []
+correct_guesses = 0
+while len(results) < TEST_COUNT:
+    
+    random_datetimes = []
+    while len(random_datetimes) < MAX_GUESSES:
+    
+        guess = make_guess('guass0,.5/4') 
+    
+        # want MAX_GUESSES unique guesses
+        if guess not in random_datetimes:
+            random_datetimes.append( guess )
 
+    guess_diffs = []    
+    for guess in random_datetimes:
+        guess_diff = guess - ACTUAL
+        guess_minutes = divmod(guess_diff.total_seconds(), 60)[0]
+        guess_diffs.append( abs(guess_minutes) )
+
+    results.append( min(guess_diffs) )
+
+    if ACTUAL in random_datetimes:
+        correct_guesses += 1
+    
+average = sum( results ) / len(results)
+
+print "AVERAGE GUESS OFF BY: %s" % average
 print
-print "CLOSEST GUESS:"
-print min(guess_diffs)
-print ACTUAL.strftime(FMT) 
-print ACTUAL in random_datetimes
+print "CORRECT GUESSES IN %s: %d" % ( TEST_COUNT, correct_guesses )
 print
+
+print "ACCURACY: {0:.0f}% ".format( ( float(correct_guesses) / TEST_COUNT ) * 100 )
+print
+
+sys.exit()
 
 if ACTUAL in random_datetimes:
     guesses_file = open( 'guesses.txt', 'w' )
